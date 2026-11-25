@@ -1,0 +1,19 @@
+{
+  "name": "smart-file-manager",
+  "version": "1.0.0",
+  "description": "AI-Powered PC File Manager and System Cleaner",
+  "author": "Jobcollins",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win portable"
+  },
+
+  "devDependencies": {
+    "electron": "^45.5.0",
+    "electron-builder": "^26.18.0"
+  },
+  "dependencies": {
+    "@google/genai": "^3.6.1"
+  }
+}

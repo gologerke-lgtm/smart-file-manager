@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Smart PC File Manager (AI Powered)</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      background-color: #121212;
+      color: #e4e4e7;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      gap: 14px;
+    }
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    h1 { margin: 0; font-size: 22px; color: #38bdf8; }
+    .subtitle { font-size: 13px; color: #a1a1aa; }
+    .api-box { display: flex; gap: 6px; align-items: center; }
+    .api-box input {
+      padding: 8px 10px; font-size: 12px; border-radius: 6px;
+      border: 1px solid #27272a; background: #18181b; color: #fff; width: 220px;
+    }
+    .api-box button {
+      padding: 8px 12px; font-size: 12px; border-radius: 6px; border: 1px solid #334155;
+      background: #1e293b; color: #7dd3fc; cursor: pointer;
+    }
+    .quick-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .chip {
+      background: #1e293b; color: #7dd3fc; border: 1px solid #334155;
+      padding: 6px 12px; border-radius: 20px; font-size: 12px; cursor: pointer;
+    }
+    .chip:hover { background: #334155; }
+    .input-row { display: flex; gap: 10px; }
+    input[type="text"].prompt {
+      flex: 1; padding: 14px; font-size: 15px; border-radius: 8px;
+      border: 1px solid #27272a; background: #18181b; color: #fff; outline: none;
+    }
+    input[type="text"].prompt:focus { border-color: #38bdf8; }
+    button.primary {
+      padding: 0 22px; font-size: 15px; font-weight: 600; border: none;
+      border-radius: 8px; background: #38bdf8; color: #09090b; cursor: pointer;
+    }
+    button.primary:hover { background: #0ea5e9; }
+    button.undo {
+      padding: 0 16px; font-size: 14px; font-weight: 600; border: 1px solid #f59e0b;
+      border-radius: 8px; background: transparent; color: #fbbf24; cursor: pointer;
+    }
+    .controls { display: flex; align-items: center; gap: 10px; font-size: 14px; color: #d4d4d8; }
+    #console {
+      flex: 1; background: #09090b; border: 1px solid #27272a; border-radius: 8px;
+      padding: 16px; font-family: 'Consolas', monospace; font-size: 13px;
+      line-height: 1.5; color: #4ade80; overflow-y: auto; white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <div>
+      <h1>Smart PC File Manager</h1>
+      <div class="subtitle">AI Natural-Language Sorter • Folder Organizer • Deep System Cleaner</div>
+    </div>
+    <div class="api-box">
+      <input type="password" id="apiKeyInput" placeholder="Paste Gemini API Key..." />
+      <button onclick="saveKey()" id="saveKeyBtn">Save Key</button>
+    </div>
+  </div>
+
+  <div class="quick-actions">
+    <button class="chip" onclick="fillPrompt('Sort my desktop')">Sort Desktop</button>
+    <button class="chip" onclick="fillPrompt('Move all PDFs from Downloads to Documents')">Move PDFs to Documents</button>
+    <button class="chip" onclick="fillPrompt('Deep clean system temp files and empty folders')">Deep System Clean</button>
+    <button class="chip" onclick="fillPrompt('Organize my desktop and clean temp junk')">Full Cleanup</button>
+  </div>
+
+  <div class="input-row">
+    <input type="text" class="prompt" id="promptInput" placeholder="Ask anything (e.g., 'Move all APKs on my desktop and clean temp files')..." />
+    <button class="primary" onclick="runTask()">Run</button>
+    <button class="undo" onclick="undoTask()">Undo Move</button>
+  </div>
+
+  <label class="controls">
+    <input type="checkbox" id="dryRunCheck" checked />
+    <span><strong>Dry Run Mode</strong> (Preview changes safely before moving or deleting anything)</span>
+  </label>
+
+  <div id="console">Ready. Paste your Gemini API key above for full AI commands, or run offline commands immediately.</div>
+
+  <script>
+    const { ipcRenderer } = require('electron');
+    const promptInput = document.getElementById('promptInput');
+    const consoleBox = document.getElementById('console');
+    const dryRunCheck = document.getElementById('dryRunCheck');
+    const apiKeyInput = document.getElementById('apiKeyInput');
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      const savedKey = await ipcRenderer.invoke('get-api-key');
+      if (savedKey) {
+        apiKeyInput.value = savedKey;
+        document.getElementById('saveKeyBtn').innerText = 'Key Saved ✓';
+      }
+    });
+
+    async function saveKey() {
+      await ipcRenderer.invoke('save-api-key', apiKeyInput.value);
+      document.getElementById('saveKeyBtn').innerText = 'Key Saved ✓';
+      consoleBox.innerText = 'Gemini API Key saved! AI natural-language parsing is now active.';
+    }
+
+    promptInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') runTask(); });
+    function fillPrompt(text) { promptInput.value = text; promptInput.focus(); }
+
+    async function runTask() {
+      const prompt = promptInput.value.trim();
+      if (!prompt) return;
+      consoleBox.innerText = 'Thinking & processing request...';
+      consoleBox.innerText = await ipcRenderer.invoke('execute-prompt', { prompt, dryRun: dryRunCheck.checked });
+    }
+
+    async function undoTask() {
+      consoleBox.innerText = 'Reverting last file sort...';
+      consoleBox.innerText = await ipcRenderer.invoke('execute-prompt', { prompt: 'undo', dryRun: false });
+    }
+  </script>
+</body>
+</html>
